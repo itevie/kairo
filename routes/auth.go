@@ -103,7 +103,7 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 		if c.Query("register") != "true" {
 			if err := db.QueryRowx("SELECT * FROM users WHERE dawn_id = ?;", details.User).StructScan(&user); err != nil {
 				if err == sql.ErrNoRows {
-					c.Redirect(302, fmt.Sprintf("http://localhost:3000/auth/confirm_register?path=/auth/dawn&scheme=dawn&access_token=%s", access_token))
+					c.Redirect(302, fmt.Sprintf("/auth/confirm_register?path=/auth/dawn&scheme=dawn&access_token=%s", access_token))
 					c.Abort()
 					return
 				}
@@ -143,9 +143,9 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 
 		c.SetCookie("session", session.SID, expire, "/", "", false, true)
 		if c.Query("register") == "true" {
-			c.Redirect(303, "http://localhost:3000/welcome")
+			c.Redirect(303, "/welcome")
 		} else {
-			c.Redirect(303, "http://localhost:3000")
+			c.Redirect(303, "/")
 		}
 	})
 }
