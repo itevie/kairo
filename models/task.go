@@ -8,6 +8,6 @@ type Task struct {
 	CreatedAt string  `db:"created_at" json:"created_at"`
 	Due       *string `db:"due" json:"due"`
 	Repeat    *int    `db:"repeat" json:"repeat"`
-	Group     *int    `db:"in_group" json:"group"`
+	Group     *int    `db:"in_group" json:"in_group"`
 	Note      *string `db:"note" json:"note"`
 }

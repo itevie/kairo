@@ -5,7 +5,7 @@ import Container from "../dawn-ui/components/Container";
 import Button from "../dawn-ui/components/Button";
 import Link from "../dawn-ui/components/Link";
 
-export const apiUrl = "http://localhost:3005";
+export const apiUrl = "https://kairo.dawn.rest";
 
 export default function Login() {
   return (

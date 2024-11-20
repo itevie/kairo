@@ -26,6 +26,41 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
+		for _, v := range tasks {
+			if v.Finished && v.Repeat != nil {
+				var temp models.Task
+				if err := db.QueryRowx(
+					"INSERT INTO tasks (user, title, finished, created_at, due, repeat, in_group, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;",
+					user,
+					v.Title,
+					false,
+					time.Now().Format(util.TimeLayout),
+					time.Now().Add(time.Duration(*v.Repeat)*time.Millisecond).Format(util.TimeLayout),
+					*v.Repeat,
+					v.Group,
+					v.Note,
+				).StructScan(&temp); err != nil {
+					fmt.Println(err.Error())
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"message": "Failed to create new task for repeating task",
+					})
+					c.Abort()
+					return
+				}
+				tasks = append(tasks, temp)
+
+				if err := db.QueryRowx("UPDATE tasks SET repeat = null WHERE id = ? RETURNING *;", v.ID).StructScan(&v); err != nil {
+					fmt.Println(err.Error())
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"message": "Failed to create new task for repeating task",
+					})
+					c.Abort()
+					return
+				}
+
+			}
+		}
+
 		c.JSON(http.StatusOK, tasks)
 	})
 
@@ -37,7 +72,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			Due    *string `json:"due"`
 			Note   *string `json:"note"`
 			Repeat *int    `json:"repeat"`
-			Group  *int    `json:"group"`
+			Group  *int    `json:"in_group"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -106,7 +141,10 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 		}
 
 		var body struct {
-			Finished *bool `json:"finished"`
+			Finished *bool   `json:"finished"`
+			Due      *string `json:"due"`
+			Group    *int    `json:"in_group"`
+			Repeat   *int    `json:"repeat"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -119,6 +157,53 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 
 		if body.Finished != nil {
 			if err := db.QueryRowx("UPDATE tasks SET finished = ? WHERE id = ? RETURNING *;", *body.Finished, task.ID).StructScan(&task); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Internal database error",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		if body.Due != nil {
+			if !util.IsValidDate(*body.Due) {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"message": "Invalid date format for due, expected yyyy/mm/dd hh:mm:ss",
+				})
+				c.Abort()
+				return
+			}
+
+			if err := db.QueryRowx("UPDATE tasks SET due = ? WHERE id = ? RETURNING *;", *body.Due, task.ID).StructScan(&task); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Internal database error",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		if body.Repeat != nil {
+			if *body.Repeat < 1000 {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"message": "Repeat must be at least 1000",
+				})
+				c.Abort()
+				return
+			}
+
+			if err := db.QueryRowx("UPDATE tasks SET repeat = ? WHERE id = ? RETURNING *;", *body.Repeat, task.ID).StructScan(&task); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Internal database error",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		// TODO: Validate that the group exists
+		if body.Group != nil {
+			if err := db.QueryRowx("UPDATE tasks SET in_group = ? WHERE id = ? RETURNING *;", *body.Group, task.ID).StructScan(&task); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"message": "Internal database error",
 				})

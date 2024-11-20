@@ -47,6 +47,7 @@ func main() {
 	api := router.Group("/api")
 	{
 		routes.RegisterTaskRoutes(api, db)
+		routes.RegisterGroupRoutes(api, db)
 	}
 
 	router.Run(":3005")
