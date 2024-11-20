@@ -141,7 +141,7 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		c.SetCookie("session", session.SID, expire, "/", "localhost", false, true)
+		c.SetCookie("session", session.SID, expire, "/", "", false, true)
 		if c.Query("register") == "true" {
 			c.Redirect(303, "http://localhost:3000/welcome")
 		} else {
