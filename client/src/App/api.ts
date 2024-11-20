@@ -5,7 +5,9 @@ import { Group, Task } from "./types";
 const axiosClient = new AxiosWrapper();
 axiosClient.showLoader = false;
 axiosClient.config.withCredentials = true;
-
+axiosClient.config.headers = {
+  Authorization: "Bearer Guest",
+};
 // ----- Tasks -----
 
 export async function fetchTasks() {
