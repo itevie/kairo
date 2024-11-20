@@ -41,7 +41,7 @@ func AuthenticateJWT() gin.HandlerFunc {
 		}
 
 		if tokenString == "Guest" {
-			c.Set("user_id", 4)
+			c.Set("user_id", float64(4))
 			c.Next()
 			return
 		}
