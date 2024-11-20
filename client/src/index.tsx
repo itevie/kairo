@@ -2,7 +2,7 @@ import ReactDOM from "react-dom/client";
 import Home from "./Home";
 import AlertManager from "./dawn-ui/components/AlertManager";
 import ContextMenuManager from "./dawn-ui/components/ContextMenuManager";
-import { loadTheme } from "./dawn-ui";
+import { loadTheme, setTheme, themeSetBackground } from "./dawn-ui";
 import "./dawn-ui/index";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ConfirmRegister from "./Pages/ConfirmRegister";
@@ -10,6 +10,10 @@ import Welcome from "./Pages/Welcome";
 import Login from "./Pages/Login";
 import Kairo from "./App/Kairo";
 
+let t = localStorage.getItem("kairo-theme");
+if (t) setTheme(t as any);
+if (localStorage.getItem("kairo-background-url"))
+  themeSetBackground(localStorage.getItem("kairo-background-url") as string);
 loadTheme();
 
 const root = ReactDOM.createRoot(
