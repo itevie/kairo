@@ -4,6 +4,7 @@ import Container from "../dawn-ui/components/Container";
 import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
 import Row from "../dawn-ui/components/Row";
 import { DawnTime, units } from "../dawn-ui/time";
+import showTaskEditor from "./TaskEditor";
 import { Task } from "./types";
 
 export type ListType =
@@ -29,6 +30,10 @@ export default function TaskList({
 }) {
   let tasks = hook.tasks
     .filter(filters[type || "all"] || (() => true))
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
     .sort(
       (a, b) => new Date(b.due || 0).getTime() - new Date(a.due || 0).getTime()
     );
@@ -82,6 +87,9 @@ export default function TaskList({
         let key = `Every ${time.units[unit]} ${unit}${
           time.units[unit] !== 1 ? "s" : ""
         }`;
+        if (time.units[unit] === 1)
+          key = `Every ${unit}${time.units[unit] !== 1 ? "s" : ""}`;
+
         if (!data[key]) data[key] = [];
         data[key].push(task);
       }
@@ -106,7 +114,11 @@ export default function TaskList({
         .filter((x) => data[x].length > 0)
         .map((k) => (
           <>
-            <label>{k}</label>
+            <label>
+              {k}
+              {k.length !== 0 ? " - " : ""}
+              {data[k].length} items
+            </label>
             <Column style={{ margin: "3px" }}>
               {data[k].map((x) => (
                 <Container
@@ -125,38 +137,17 @@ export default function TaskList({
                       event: e,
                       elements: [
                         {
-                          label: "Set Due",
+                          label: "Edit",
                           type: "button",
                           onClick: async () => {
-                            const date = await showInputAlert("Enter Date:");
-                            if (date) {
-                              hook.updateTask(x.id, { due: date });
-                            }
-                          },
-                        },
-                        {
-                          label: "Change Group",
-                          type: "button",
-                          onClick: async () => {
-                            const group = await showInputAlert("Group");
-                            if (group) {
-                              hook.updateTask(x.id, {
-                                in_group: hook.groups.find(
-                                  (x) =>
-                                    x.name.toLowerCase() === group.toLowerCase()
-                                )?.id,
-                              });
-                            }
-                          },
-                        },
-                        {
-                          label: "Change Repitition",
-                          type: "button",
-                          onClick: async () => {
-                            const repeat = await showInputAlert("Group");
-                            hook.updateTask(x.id, {
-                              repeat: parseInt(repeat || "") || null,
-                            });
+                            const result = await showTaskEditor(
+                              type ?? "",
+                              hook.groups,
+                              x,
+                              true
+                            );
+                            if (!result) return;
+                            await hook.updateTask(x.id, result);
                           },
                         },
                         {
@@ -179,9 +170,21 @@ export default function TaskList({
                     <input readOnly checked={x.finished} type="checkbox" />
                     <Column>
                       <label>{x.title}</label>
-                      <small>
-                        Due: {x.due} Repeat: {x.repeat}
-                      </small>
+                      {x.note ? (
+                        <label style={{ fontSize: "0.8em" }}>{x.note}</label>
+                      ) : (
+                        ""
+                      )}
+                      {(x.due || x.repeat) && (
+                        <small>
+                          {x.due ? `Due: ${x.due} ` : ""}
+                          {x.repeat
+                            ? `Repeat: ${new DawnTime(
+                                x.repeat || 0
+                              ).toString()}`
+                            : ""}
+                        </small>
+                      )}
                     </Column>
                   </Row>
                 </Container>

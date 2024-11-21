@@ -16,6 +16,7 @@ import { DawnTime } from "../dawn-ui/time";
 import Words from "../dawn-ui/components/Words";
 import Container from "../dawn-ui/components/Container";
 import { setTheme, themeSetBackground } from "../dawn-ui";
+import showTaskEditor from "./TaskEditor";
 
 export default function Kairo() {
   const tasks = useTasks();
@@ -36,112 +37,9 @@ export default function Kairo() {
   }
 
   async function handleCreateTask() {
-    let name = "";
-    let due = "";
-    let repeat = "";
-    let group = "";
-
-    if (page.startsWith("group-")) {
-      let id = page.split("-")[1];
-      group = tasks.groups.find((x) => x.id.toString() === id)?.name || "";
-    }
-
-    addAlert({
-      title: "Create New Task",
-      body: (
-        <table style={{ width: "100%" }}>
-          <tbody style={{ width: "100%" }}>
-            <tr>
-              <td>
-                <label>Name</label>
-              </td>
-              <td>
-                <input
-                  autoFocus
-                  defaultValue={name}
-                  onChange={(e) => (name = e.currentTarget.value)}
-                  style={{ width: "100%" }}
-                  className="dawn-big"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label>Due</label>
-              </td>
-              <td>
-                <input
-                  defaultValue={due}
-                  onChange={(e) => (due = e.currentTarget.value)}
-                  type="datetime-local"
-                  style={{ width: "100%" }}
-                  className="dawn-big"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label>Repeat</label>
-              </td>
-              <td>
-                <input
-                  defaultValue={repeat}
-                  onChange={(e) => (repeat = e.currentTarget.value)}
-                  style={{ width: "100%" }}
-                  className="dawn-big"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label>Group</label>
-              </td>
-              <td>
-                <input
-                  defaultValue={group}
-                  onChange={(e) => (group = e.currentTarget.value)}
-                  style={{ width: "100%" }}
-                  className="dawn-big"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      ),
-      buttons: [
-        {
-          id: "cancel",
-          text: "Cancel",
-          click(close) {
-            close();
-          },
-        },
-        {
-          id: "create",
-          text: "Create",
-          enterKey: true,
-          click(close) {
-            const _repeat = DawnTime.fromString(repeat);
-            if (!_repeat)
-              return showErrorAlert("Invalid value in repeat field!");
-            const _group = tasks.groups.find(
-              (x) => x.name.toLowerCase() === group.toLowerCase()
-            );
-            if (group && !_group)
-              return showErrorAlert(`The group ${_group} does not exist`);
-            if (due) due = due?.replace(/-/g, "/").replace("T", " ") + ":00";
-            close();
-            console.log(due?.replace(/-/g, "/").replace("T", " ") + ":00");
-            tasks.createTask({
-              repeat: _repeat.toMs() || null,
-              in_group: _group?.id,
-              title: name,
-              due: due || null,
-            });
-          },
-        },
-      ],
-    });
+    let result = await showTaskEditor(page, tasks.groups);
+    if (!result) return;
+    tasks.createTask(result);
   }
 
   return (

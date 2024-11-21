@@ -145,6 +145,8 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			Due      *string `json:"due"`
 			Group    *int    `json:"in_group"`
 			Repeat   *int    `json:"repeat"`
+			Note     *string `json:"note"`
+			Title    *string `json:"title"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -175,6 +177,26 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			}
 
 			if err := db.QueryRowx("UPDATE tasks SET due = ? WHERE id = ? RETURNING *;", *body.Due, task.ID).StructScan(&task); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Internal database error",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		if body.Note != nil {
+			if err := db.QueryRowx("UPDATE tasks SET note = ? WHERE id = ? RETURNING *;", *body.Note, task.ID).StructScan(&task); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Internal database error",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		if body.Title != nil {
+			if err := db.QueryRowx("UPDATE tasks SET title = ? WHERE id = ? RETURNING *;", *body.Title, task.ID).StructScan(&task); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"message": "Internal database error",
 				})
