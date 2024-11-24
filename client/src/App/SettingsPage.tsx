@@ -117,7 +117,9 @@ export default function SettingsPage({
         <Row style={{ margin: "10px" }}>
           <input
             type="checkbox"
-            defaultChecked={localStorage.getItem("kairo-show-mood") === "true"}
+            defaultChecked={
+              (localStorage.getItem("kairo-show-mood") ?? "true") === "true"
+            }
             onChange={(e) => {
               localStorage.setItem(
                 "kairo-show-mood",
@@ -132,7 +134,7 @@ export default function SettingsPage({
           <input
             type="checkbox"
             defaultChecked={
-              localStorage.getItem("kairo-prompt-mood") === "true"
+              (localStorage.getItem("kairo-prompt-mood") ?? "true") === "true"
             }
             onChange={(e) => {
               localStorage.setItem(
@@ -148,7 +150,8 @@ export default function SettingsPage({
           <input
             type="checkbox"
             defaultChecked={
-              localStorage.getItem("kairo-use-mood-colors") === "true"
+              (localStorage.getItem("kairo-use-mood-colors") ?? "true") ===
+              "true"
             }
             onChange={(e) => {
               localStorage.setItem(

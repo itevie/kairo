@@ -10,6 +10,8 @@ import {
   updateTask,
 } from "../api";
 import { Group, MoodLog, Task } from "../types";
+import { DawnTime } from "../../dawn-ui/time";
+import showMoodLogger from "../MoodLogger";
 
 export default function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -84,8 +86,17 @@ export default function useTasks() {
   async function _fetchMoodEntries() {
     try {
       const result = await fetchMoodEntries();
-      console.log(result);
       setMoods(result.data);
+
+      if (
+        DawnTime.formatDateString(
+          new Date(result.data[result.data.length - 1].created_at),
+          "YYYY-MM-DD"
+        ) !== DawnTime.formatDateString(new Date(), "YYYY-MM-DD")
+      ) {
+        if (localStorage.getItem("kairo-prompt-mood") === "true")
+          showMoodLogger();
+      }
     } catch {}
   }
 

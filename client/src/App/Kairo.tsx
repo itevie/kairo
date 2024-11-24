@@ -26,6 +26,7 @@ import { DawnTime } from "../dawn-ui/time";
 import "./style.css";
 import Words from "../dawn-ui/components/Words";
 import MoodHistory from "./MoodHistory";
+import Container from "../dawn-ui/components/Container";
 
 registerShortcut("search", { key: "s", modifiers: ["ctrl"] });
 registerShortcut("new-task", { key: "n", modifiers: ["shift"] });
@@ -79,7 +80,7 @@ export default function Kairo() {
       <FAB shortcut={"new-task"} clicked={handleCreateTask} />
       <Sidebar>
         <Column style={{ gap: "5px" }}>
-          {localStorage.getItem("kairo-show-mood") === "true" && (
+          {(localStorage.getItem("kairo-show-mood") ?? "true") === "true" && (
             <>
               <SidebarButton
                 label="Log Mood"
@@ -144,8 +145,7 @@ export default function Kairo() {
           <>
             {{
               mood_history: (
-                <div>
-                  <Words type="heading">Average mood calendar:</Words>
+                <Container title="Average mood calendar">
                   <Calendar
                     onClickDay={(v) => {
                       setPage(
@@ -168,7 +168,8 @@ export default function Kairo() {
                       ).replace(/_/g, "-")}`;
                     }}
                   />
-                </div>
+                  <label>Click on an entry to view logs for that day.</label>
+                </Container>
               ),
               settings: <SettingsPage hook={tasks} />,
             }[page] ?? <TaskList hook={tasks} type={page as ListType} />}
