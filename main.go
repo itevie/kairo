@@ -50,6 +50,7 @@ func main() {
 	{
 		routes.RegisterTaskRoutes(api, db)
 		routes.RegisterGroupRoutes(api, db)
+		routes.RegisterMoodRoutes(api, db)
 	}
 
 	router.NoRoute(func(c *gin.Context) {
