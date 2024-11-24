@@ -1,0 +1,19 @@
+.mood-very-bad {
+  background-color: #ff0000;
+}
+
+.mood-bad {
+  background-color: #ff5555;
+}
+
+.mood-neutral {
+  background-color: #8888ff;
+}
+
+.mood-good {
+  background-color: #55ff55;
+}
+
+.mood-very-good {
+  background-color: #00ff00;
+}

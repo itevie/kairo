@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { showInputAlert } from "../dawn-ui/components/AlertManager";
 import Column from "../dawn-ui/components/Column";
 import Content from "../dawn-ui/components/Content";
@@ -13,8 +13,19 @@ import {
   registerShortcut,
   setCallback,
 } from "../dawn-ui/components/ShortcutManager";
-import showMoodLogger from "./MoodLogger";
+import showMoodLogger, {
+  createAverageMood,
+  moodMap,
+  MoodType,
+} from "./MoodLogger";
 import SettingsPage from "./SettingsPage";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { MoodLog } from "./types";
+import { DawnTime } from "../dawn-ui/time";
+import "./style.css";
+import Words from "../dawn-ui/components/Words";
+import MoodHistory from "./MoodHistory";
 
 registerShortcut("search", { key: "s", modifiers: ["ctrl"] });
 registerShortcut("new-task", { key: "n", modifiers: ["shift"] });
@@ -30,6 +41,15 @@ registerShortcut("log-mood", {
 export default function Kairo() {
   const tasks = useTasks();
   const [page, _setPage] = useState<string>("all");
+  const _moodMap = useMemo(() => {
+    const t: Record<string, MoodLog[]> = {};
+    for (const m of tasks.moods) {
+      let k = DawnTime.formatDateString(new Date(m.created_at), "YYYY-MM-DD");
+      if (!t[k]) t[k] = [];
+      t[k].push(m);
+    }
+    return t;
+  }, [tasks.moods]);
 
   useEffect(() => {
     if (window.location.hash) {
@@ -114,10 +134,46 @@ export default function Kairo() {
         </Column>
       </Sidebar>
       <Content style={{ width: "100%", overflow: "auto" }}>
-        {{
-          mood_history: <></>,
-          settings: <SettingsPage hook={tasks} />,
-        }[page] ?? <TaskList hook={tasks} type={page as ListType} />}
+        {page.startsWith("view_mood_details") ? (
+          <MoodHistory
+            date={page.split("@")[1]}
+            hook={tasks}
+            _moodMap={_moodMap}
+          />
+        ) : (
+          <>
+            {{
+              mood_history: (
+                <div>
+                  <Words type="heading">Average mood calendar:</Words>
+                  <Calendar
+                    onClickDay={(v) => {
+                      setPage(
+                        `view_mood_details@${DawnTime.formatDateString(
+                          v,
+                          "YYYY-MM-DD"
+                        )}`
+                      );
+                    }}
+                    tileClassName={({ activeStartDate, date, view }) => {
+                      if (view !== "month") return null;
+                      let k = DawnTime.formatDateString(date, "YYYY-MM-DD");
+                      if (!_moodMap[k]) return null;
+                      return `mood-${(
+                        createAverageMood(
+                          _moodMap[k].map(
+                            (x) => moodMap[x.emotion as keyof typeof moodMap]
+                          ) as MoodType[]
+                        ) as keyof typeof moodMap
+                      ).replace(/_/g, "-")}`;
+                    }}
+                  />
+                </div>
+              ),
+              settings: <SettingsPage hook={tasks} />,
+            }[page] ?? <TaskList hook={tasks} type={page as ListType} />}
+          </>
+        )}
       </Content>
     </Row>
   );

@@ -5,10 +5,16 @@ import Column from "../dawn-ui/components/Column";
 import GoogleMatieralIcon from "../dawn-ui/components/GoogleMaterialIcon";
 import Row from "../dawn-ui/components/Row";
 import { combineStyles } from "../dawn-ui/util";
-import { MoodLog } from "./types";
 import { createMoodEntry } from "./api";
 
 export type MoodType = "very_bad" | "bad" | "neutral" | "good" | "very_good";
+export const moodTypes = [
+  "very_bad",
+  "bad",
+  "neutral",
+  "good",
+  "very_good",
+] as const;
 
 export const moodList = [
   "extremely_dissatisfied",
@@ -57,6 +63,13 @@ export const defaultMoodList = [
   "satisfied",
   "very_satisfied",
 ] as const;
+
+export function createAverageMood(values: MoodType[]): MoodType {
+  let average = 0;
+  for (const v of values) average += moodTypes.indexOf(v) - 2;
+  average /= values.length;
+  return moodTypes[Math.round(Math.min(2, Math.max(-2, average))) + 2];
+}
 
 function MoodLoggerElement() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -115,6 +128,7 @@ function MoodLoggerElement() {
                 note: noteRef.current?.value,
               });
             } catch {}
+            closeAlert();
           }}
         >
           Log it!

@@ -49,3 +49,7 @@ export async function addGroup(name: string) {
 export async function createMoodEntry(details: Partial<MoodLog>) {
   return await axiosClient.post<MoodLog>(`${apiUrl}/api/moods`, details);
 }
+
+export async function fetchMoodEntries() {
+  return await axiosClient.get<MoodLog[]>(`${apiUrl}/api/moods`);
+}

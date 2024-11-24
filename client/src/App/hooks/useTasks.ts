@@ -5,6 +5,7 @@ import {
   createMoodEntry,
   deleteTask,
   fetchGroups,
+  fetchMoodEntries,
   fetchTasks,
   updateTask,
 } from "../api";
@@ -16,6 +17,7 @@ export default function useTasks() {
   const [moods, setMoods] = useState<MoodLog[]>([]);
 
   useEffect(() => {
+    _fetchMoodEntries();
     reloadGroups();
     reloadTasks();
   }, []);
@@ -25,7 +27,6 @@ export default function useTasks() {
   async function reloadTasks() {
     try {
       const response = await fetchTasks();
-      console.log(response.data);
       setTasks(response.data);
     } catch {}
   }
@@ -80,9 +81,18 @@ export default function useTasks() {
     } catch {}
   }
 
+  async function _fetchMoodEntries() {
+    try {
+      const result = await fetchMoodEntries();
+      console.log(result);
+      setMoods(result.data);
+    } catch {}
+  }
+
   return {
     tasks,
     groups,
+    moods,
     reloadTasks,
     createTask,
     updateTask: _updateTask,
@@ -90,5 +100,6 @@ export default function useTasks() {
     reloadGroups,
     createGroup,
     createMoodEntry: _createMoodEntry,
+    fetchMoodEntries: _fetchMoodEntries,
   };
 }
