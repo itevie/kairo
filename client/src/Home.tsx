@@ -16,7 +16,8 @@ export default function App() {
       </Navbar>
       <Page>
         <Container title="Kairo">
-          Kairo is a customisable to-do app.
+          Kairo is your personal journel featuring a mood tracker and highly
+          functional to-dos.
           <Row>
             <Button big onClick={() => (window.location.href = "/app")}>
               Open App

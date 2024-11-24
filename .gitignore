@@ -1,2 +1,4 @@
 /database.db
 client/node_modules/
+./.env
+.env

@@ -9,10 +9,16 @@ import (
 	"dawn.rest/todo/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		panic("Error loading .env file")
+	}
+
 	const file string = "database.db"
 
 	db := sqlx.MustConnect("sqlite3", file)

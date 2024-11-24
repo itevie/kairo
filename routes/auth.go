@@ -129,7 +129,7 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		expire := int(time.Now().Add(time.Hour * 24).Unix())
+		expire := int(time.Now().Add(time.Hour * 24 * 7).Unix())
 
 		var session models.Session
 		if err := db.QueryRowx("INSERT INTO sessions (sid, expire, user) VALUES (?, ?, ?) RETURNING *;", token, expire, user.ID).StructScan(&session); err != nil {
