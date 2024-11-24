@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import {
   addGroup,
   addTask,
+  createMoodEntry,
   deleteTask,
   fetchGroups,
   fetchTasks,
   updateTask,
 } from "../api";
-import { Group, Task } from "../types";
+import { Group, MoodLog, Task } from "../types";
 
 export default function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [moods, setMoods] = useState<MoodLog[]>([]);
 
   useEffect(() => {
     reloadGroups();
@@ -55,6 +57,7 @@ export default function useTasks() {
   }
 
   // ----- Groups -----
+
   async function reloadGroups() {
     try {
       const response = await fetchGroups();
@@ -70,6 +73,13 @@ export default function useTasks() {
     } catch {}
   }
 
+  // ----- Moods -----
+  async function _createMoodEntry(entry: Partial<MoodLog>) {
+    try {
+      await createMoodEntry(entry);
+    } catch {}
+  }
+
   return {
     tasks,
     groups,
@@ -79,5 +89,6 @@ export default function useTasks() {
     deleteTask: _deleteTask,
     reloadGroups,
     createGroup,
+    createMoodEntry: _createMoodEntry,
   };
 }

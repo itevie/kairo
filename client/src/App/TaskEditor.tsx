@@ -77,12 +77,17 @@ export default async function showTaskEditor(
                 <label>Group</label>
               </td>
               <td>
-                <input
+                <select
                   defaultValue={group}
                   onChange={(e) => (group = e.currentTarget.value)}
-                  style={{ width: "100%" }}
+                  style={{ width: "100%", textAlign: "center" }}
                   className="dawn-big"
-                />
+                >
+                  <option value="">None</option>
+                  {groups.map((x) => (
+                    <option value={x.name}>{x.name}</option>
+                  ))}
+                </select>
               </td>
             </tr>
             <tr>

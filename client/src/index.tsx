@@ -9,6 +9,7 @@ import ConfirmRegister from "./Pages/ConfirmRegister";
 import Welcome from "./Pages/Welcome";
 import Login from "./Pages/Login";
 import Kairo from "./App/Kairo";
+import { FlyoutManager } from "./dawn-ui/components/Flyout";
 
 let t = localStorage.getItem("kairo-theme");
 if (t) setTheme(t as any);
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
 root.render(
   <>
     <AlertManager />
+    <FlyoutManager />
     <ContextMenuManager />
     <RouterProvider router={router} />
   </>

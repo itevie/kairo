@@ -1,4 +1,4 @@
-import { showInputAlert } from "../dawn-ui/components/AlertManager";
+import { useRef, useState } from "react";
 import Column from "../dawn-ui/components/Column";
 import Container from "../dawn-ui/components/Container";
 import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
@@ -6,6 +6,11 @@ import Row from "../dawn-ui/components/Row";
 import { DawnTime, units } from "../dawn-ui/time";
 import showTaskEditor from "./TaskEditor";
 import { Task } from "./types";
+import { setCallback } from "../dawn-ui/components/ShortcutManager";
+import { combineClasses } from "../dawn-ui/util";
+import GoogleMatieralIcon from "../dawn-ui/components/GoogleMaterialIcon";
+import { showConfirmModel } from "../dawn-ui/components/AlertManager";
+import Flyout from "../dawn-ui/components/Flyout";
 
 export type ListType =
   | "due"
@@ -28,6 +33,10 @@ export default function TaskList({
   hook: ReturnType<typeof import("./hooks/useTasks").default>;
   type?: ListType;
 }) {
+  const [query, setQuery] = useState<string>("");
+  const [selected, setSelected] = useState<number[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   let tasks = hook.tasks
     .filter(filters[type || "all"] || (() => true))
     .sort(
@@ -37,6 +46,20 @@ export default function TaskList({
     .sort(
       (a, b) => new Date(b.due || 0).getTime() - new Date(a.due || 0).getTime()
     );
+
+  setCallback("search", () => {
+    inputRef.current?.focus();
+  });
+
+  setCallback("select-all", () => {
+    if (selected.length === tasks.length) setSelected([]);
+    else setSelected(filter(tasks, query).map((x) => x.id));
+  });
+
+  setCallback("deselect-all", () => {
+    setSelected([]);
+  });
+
   let data: { [key: string]: Task[] } = {};
 
   switch (type) {
@@ -110,32 +133,123 @@ export default function TaskList({
 
   return (
     <Column>
+      <input
+        ref={inputRef}
+        placeholder="Search tasks..."
+        className="dawn-big dawn-page-input"
+        onChange={(e) => setQuery(e.currentTarget.value)}
+      />
+      {selected.length > 0 && (
+        <div style={{ textAlign: "center" }}>
+          <hr />
+          <Column style={{ gap: "5px" }}>
+            <label>{selected.length} tasks selected</label>
+            <Row style={{ justifyContent: "center" }}>
+              <Flyout direction="up" text="Delete Selected">
+                <GoogleMatieralIcon
+                  name="delete"
+                  onClick={() => {
+                    showConfirmModel(
+                      "Are you sure you want to delete all selected tasks?",
+                      () => {
+                        for (const task of tasks.filter((x) =>
+                          selected.includes(x.id)
+                        ))
+                          hook.deleteTask(task.id);
+                        setSelected([]);
+                      }
+                    );
+                  }}
+                />
+              </Flyout>
+              <Flyout text="Mark Selected as Finished">
+                <GoogleMatieralIcon
+                  name="check_circle"
+                  onClick={() => {
+                    showConfirmModel(
+                      "Are you sure you want to finish all selected tasks?",
+                      () => {
+                        for (const task of tasks.filter(
+                          (x) => !x.finished && selected.includes(x.id)
+                        ))
+                          hook.updateTask(task.id, { finished: true });
+                        setSelected([]);
+                      }
+                    );
+                  }}
+                />
+              </Flyout>
+              <Flyout text="Mark Selected as Unfinished">
+                <GoogleMatieralIcon
+                  name="unpublished"
+                  onClick={() => {
+                    showConfirmModel(
+                      "Are you sure you want to unfinish all selected tasks?",
+                      () => {
+                        for (const task of tasks.filter(
+                          (x) => x.finished && selected.includes(x.id)
+                        ))
+                          hook.updateTask(task.id, { finished: false });
+                        setSelected([]);
+                      }
+                    );
+                  }}
+                />
+              </Flyout>
+              <Flyout text="Deselect All">
+                <GoogleMatieralIcon
+                  name="check_box_outline_blank"
+                  onClick={() => setSelected([])}
+                />
+              </Flyout>
+            </Row>
+          </Column>
+          <hr />
+        </div>
+      )}
       {Object.keys(data)
-        .filter((x) => data[x].length > 0)
+        .filter((x) => filter(data[x], query).length > 0)
         .map((k) => (
           <>
             <label>
               {k}
               {k.length !== 0 ? " - " : ""}
-              {data[k].length} items
+              {filter(data[k], query).length} items
             </label>
             <Column style={{ margin: "3px" }}>
-              {data[k].map((x) => (
+              {filter(data[k], query).map((x) => (
                 <Container
-                  className={
+                  className={combineClasses(
                     x.due &&
-                    !x.finished &&
-                    Date.now() - new Date(x.due).getTime() > 0
+                      !x.finished &&
+                      Date.now() - new Date(x.due).getTime() > 0
                       ? "dawn-danger"
-                      : ""
-                  }
-                  onClick={() =>
-                    hook.updateTask(x.id, { finished: !x.finished })
-                  }
+                      : "",
+                    selected.includes(x.id) ? "dawn-selected" : ""
+                  )}
+                  onClick={(e) => {
+                    if (e.ctrlKey) {
+                      if (selected.includes(x.id))
+                        setSelected((old) => {
+                          old.splice(old.indexOf(x.id), 1);
+                          return [...old];
+                        });
+                      else setSelected((old) => [...old, x.id]);
+                    } else {
+                      hook.updateTask(x.id, { finished: !x.finished });
+                    }
+                  }}
                   onContextMenu={(e) => {
                     showContextMenu({
                       event: e,
                       elements: [
+                        {
+                          label: "Select",
+                          type: "button",
+                          onClick: () => {
+                            setSelected((old) => [...old, x.id]);
+                          },
+                        },
                         {
                           label: "Edit",
                           type: "button",
@@ -193,5 +307,16 @@ export default function TaskList({
           </>
         ))}
     </Column>
+  );
+}
+
+function filter(what: Task[], query: string): Task[] {
+  const regex = new RegExp(query, "gi");
+  return what.filter(
+    (x) =>
+      x.title.match(regex) ||
+      x.note?.match(regex) ||
+      x.due?.match(regex) ||
+      x.created_at.match(regex)
   );
 }

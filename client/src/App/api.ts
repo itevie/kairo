@@ -1,6 +1,6 @@
 import { AxiosWrapper } from "../dawn-ui/util";
 import { apiUrl } from "../Pages/Login";
-import { Group, Task } from "./types";
+import { Group, MoodLog, Task } from "./types";
 
 const axiosClient = new AxiosWrapper();
 axiosClient.showLoader = false;
@@ -42,4 +42,10 @@ export async function fetchGroups() {
 
 export async function addGroup(name: string) {
   return await axiosClient.post<Group>(`${apiUrl}/api/groups`, { name });
+}
+
+// ----- Moods -----
+
+export async function createMoodEntry(details: Partial<MoodLog>) {
+  return await axiosClient.post<MoodLog>(`${apiUrl}/api/moods`, details);
 }

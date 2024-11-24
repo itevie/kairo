@@ -17,3 +17,11 @@ export interface Group {
   note: string | null;
   theme: string | null;
 }
+
+export interface MoodLog {
+  id: number;
+  user: number;
+  emotion: string;
+  note: string | null;
+  created_at: string;
+}
