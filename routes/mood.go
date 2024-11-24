@@ -50,7 +50,7 @@ func RegisterMoodRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 
 		var mood models.MoodEntry
 		if err := db.QueryRowx(
-			"INSERT INTO mood_entries VALUES (user, emotion, note, created_at) VALUES (?, ?, ?, ?) RETURNING *;",
+			"INSERT INTO mood_entries (user, emotion, note, created_at) VALUES (?, ?, ?, ?) RETURNING *;",
 			user, body.Emotion, body.Note, time.Now().Format(util.TimeLayout),
 		).StructScan(&mood); err != nil {
 			fmt.Println(err.Error())
