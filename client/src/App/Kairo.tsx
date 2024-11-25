@@ -28,11 +28,9 @@ import "react-calendar/dist/Calendar.css";
 import { MoodLog } from "./types";
 import { DawnTime } from "../dawn-ui/time";
 import "./style.css";
-import Words from "../dawn-ui/components/Words";
 import MoodHistory from "./MoodHistory";
 import Container from "../dawn-ui/components/Container";
 import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
-import { showGroupEditor } from "./GroupEditor";
 import Button from "../dawn-ui/components/Button";
 import Flyout from "../dawn-ui/components/Flyout";
 
@@ -124,6 +122,7 @@ export default function Kairo() {
               icon="folder"
               selected={page === `group-${x.id}`}
               onClick={() => setPage(`group-${x.id}`)}
+              style={x.theme ? { color: x.theme } : {}}
               onContextMenu={(e) => {
                 showContextMenu({
                   event: e,
@@ -189,6 +188,7 @@ export default function Kairo() {
                                       name,
                                       theme: color,
                                     });
+                                    closeAlert();
                                   }}
                                 >
                                   Save

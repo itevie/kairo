@@ -113,14 +113,12 @@ func RegisterGroupRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			}
 		}
 
-		if body.Theme != nil {
-			if err := db.QueryRowx("UPDATE groups SET theme = ? WHERE id = ? RETURNING *;", body.Theme, group.ID).StructScan(&group); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
+		if err := db.QueryRowx("UPDATE groups SET theme = ? WHERE id = ? RETURNING *;", body.Theme, group.ID).StructScan(&group); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Internal database error",
+			})
+			c.Abort()
+			return
 		}
 
 		c.JSON(http.StatusOK, group)
