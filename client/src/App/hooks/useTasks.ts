@@ -7,6 +7,7 @@ import {
   fetchGroups,
   fetchMoodEntries,
   fetchTasks,
+  updateGroup,
   updateTask,
 } from "../api";
 import { Group, MoodLog, Task } from "../types";
@@ -76,6 +77,13 @@ export default function useTasks() {
     } catch {}
   }
 
+  async function _updateGroup(id: number, data: Partial<Group>) {
+    try {
+      await updateGroup(id, data);
+      reloadGroups();
+    } catch {}
+  }
+
   // ----- Moods -----
   async function _createMoodEntry(entry: Partial<MoodLog>) {
     try {
@@ -112,5 +120,6 @@ export default function useTasks() {
     createGroup,
     createMoodEntry: _createMoodEntry,
     fetchMoodEntries: _fetchMoodEntries,
+    updateGroup: _updateGroup,
   };
 }

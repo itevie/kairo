@@ -223,7 +223,6 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			}
 		}
 
-		// TODO: Validate that the group exists
 		if body.Group != nil {
 			if err := db.QueryRowx("UPDATE tasks SET in_group = ? WHERE id = ? RETURNING *;", *body.Group, task.ID).StructScan(&task); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{

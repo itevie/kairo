@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { showInputAlert } from "../dawn-ui/components/AlertManager";
+import {
+  addAlert,
+  closeAlert,
+  showInputAlert,
+} from "../dawn-ui/components/AlertManager";
 import Column from "../dawn-ui/components/Column";
 import Content from "../dawn-ui/components/Content";
 import FAB from "../dawn-ui/components/FAB";
@@ -27,6 +31,10 @@ import "./style.css";
 import Words from "../dawn-ui/components/Words";
 import MoodHistory from "./MoodHistory";
 import Container from "../dawn-ui/components/Container";
+import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
+import { showGroupEditor } from "./GroupEditor";
+import Button from "../dawn-ui/components/Button";
+import Flyout from "../dawn-ui/components/Flyout";
 
 registerShortcut("search", { key: "s", modifiers: ["ctrl"] });
 registerShortcut("new-task", { key: "n", modifiers: ["shift"] });
@@ -116,6 +124,84 @@ export default function Kairo() {
               icon="folder"
               selected={page === `group-${x.id}`}
               onClick={() => setPage(`group-${x.id}`)}
+              onContextMenu={(e) => {
+                showContextMenu({
+                  event: e,
+                  elements: [
+                    {
+                      type: "button",
+                      label: "Edit",
+                      onClick: () => {
+                        let color: string | null = x.theme;
+                        let name: string = x.name;
+                        addAlert({
+                          title: `Edit Group ${x.name}`,
+                          body: (
+                            <Column>
+                              <table>
+                                <tbody>
+                                  <tr>
+                                    <td>Name</td>
+                                    <td>
+                                      <input
+                                        defaultValue={name}
+                                        onChange={(e) =>
+                                          (name = e.currentTarget.value)
+                                        }
+                                        className="dawn-big"
+                                      />
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>Color</td>
+                                    <td>
+                                      <Row util={["no-gap"]}>
+                                        <input
+                                          defaultValue={color ?? "#FFFFFF"}
+                                          onChange={(e) =>
+                                            (color = e.currentTarget.value)
+                                          }
+                                          className="dawn-big"
+                                          type="color"
+                                        />
+                                        <Flyout text="Color will be removed when you click Save">
+                                          <Button
+                                            big
+                                            style={{ margin: "0px" }}
+                                            onClick={() => (color = null)}
+                                          >
+                                            Remove Color
+                                          </Button>
+                                        </Flyout>
+                                      </Row>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              <Row>
+                                <Button big onClick={() => closeAlert()}>
+                                  Close
+                                </Button>
+                                <Button
+                                  big
+                                  onClick={() => {
+                                    tasks.updateGroup(x.id, {
+                                      name,
+                                      theme: color,
+                                    });
+                                  }}
+                                >
+                                  Save
+                                </Button>
+                              </Row>
+                            </Column>
+                          ),
+                        });
+                      },
+                    },
+                  ],
+                });
+              }}
             />
           ))}
           {tasks.groups.length > 0 && <hr />}

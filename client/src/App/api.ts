@@ -44,6 +44,10 @@ export async function addGroup(name: string) {
   return await axiosClient.post<Group>(`${apiUrl}/api/groups`, { name });
 }
 
+export async function updateGroup(id: number, data: Partial<Group>) {
+  return await axiosClient.patch<Group>(`${apiUrl}/api/groups/${id}`, data);
+}
+
 // ----- Moods -----
 
 export async function createMoodEntry(details: Partial<MoodLog>) {
