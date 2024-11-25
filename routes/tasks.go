@@ -28,8 +28,14 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 
 		for _, v := range tasks {
 			if v.Finished && v.Repeat != nil {
+				var t time.Time
+				if v.Due != nil {
+					t, _ = time.Parse(util.TimeLayout, *v.Due)
+				} else {
+					t = time.Now()
+				}
+
 				var temp models.Task
-				t, _ := time.Parse(util.TimeLayout, *v.Due)
 				if err := db.QueryRowx(
 					"INSERT INTO tasks (user, title, finished, created_at, due, repeat, in_group, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;",
 					user,
