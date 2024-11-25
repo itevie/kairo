@@ -28,11 +28,13 @@ import "react-calendar/dist/Calendar.css";
 import { MoodLog } from "./types";
 import { DawnTime } from "../dawn-ui/time";
 import "./style.css";
-import MoodHistory from "./MoodHistory";
 import Container from "../dawn-ui/components/Container";
 import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
 import Button from "../dawn-ui/components/Button";
 import Flyout from "../dawn-ui/components/Flyout";
+import tips from "./tips";
+import MoodHistoryForDate from "./MoodHistoryForDate";
+import MoodHistory from "./MoodHistory";
 
 registerShortcut("search", { key: "s", modifiers: ["ctrl"] });
 registerShortcut("new-task", { key: "n", modifiers: ["shift"] });
@@ -48,15 +50,6 @@ registerShortcut("log-mood", {
 export default function Kairo() {
   const tasks = useTasks();
   const [page, _setPage] = useState<string>("all");
-  const _moodMap = useMemo(() => {
-    const t: Record<string, MoodLog[]> = {};
-    for (const m of tasks.moods) {
-      let k = DawnTime.formatDateString(new Date(m.created_at), "YYYY-MM-DD");
-      if (!t[k]) t[k] = [];
-      t[k].push(m);
-    }
-    return t;
-  }, [tasks.moods]);
 
   useEffect(() => {
     if (window.location.hash) {
@@ -68,6 +61,40 @@ export default function Kairo() {
     setCallback("settings", () => {
       setPage("settings");
     });
+
+    if ((localStorage.getItem("kairo-enable-tips") ?? "true") === "true") {
+      if (
+        localStorage.getItem("kairo-last-tip") !==
+        DawnTime.formatDateString(new Date(), "YYYY-MM-DD")
+      ) {
+        localStorage.setItem(
+          "kairo-last-tip",
+          DawnTime.formatDateString(new Date(), "YYYY-MM-DD")
+        );
+        addAlert({
+          title: "Daily Tip",
+          body: <label>{tips[Math.floor(Math.random() * tips.length)]}</label>,
+          allowOutsideClose: true,
+          buttons: [
+            {
+              id: "disable",
+              text: "Disable Tips",
+              click(close) {
+                localStorage.setItem("kairo-enable-tips", "false");
+                close();
+              },
+            },
+            {
+              id: "ok",
+              text: "OK!",
+              click(close) {
+                close();
+              },
+            },
+          ],
+        });
+      }
+    }
   }, []);
 
   function setPage(page: string) {
@@ -222,41 +249,11 @@ export default function Kairo() {
       </Sidebar>
       <Content style={{ width: "100%", overflow: "auto" }}>
         {page.startsWith("view_mood_details") ? (
-          <MoodHistory
-            date={page.split("@")[1]}
-            hook={tasks}
-            _moodMap={_moodMap}
-          />
+          <MoodHistoryForDate date={page.split("@")[1]} hook={tasks} />
         ) : (
           <>
             {{
-              mood_history: (
-                <Container title="Average mood calendar">
-                  <Calendar
-                    onClickDay={(v) => {
-                      setPage(
-                        `view_mood_details@${DawnTime.formatDateString(
-                          v,
-                          "YYYY-MM-DD"
-                        )}`
-                      );
-                    }}
-                    tileClassName={({ activeStartDate, date, view }) => {
-                      if (view !== "month") return null;
-                      let k = DawnTime.formatDateString(date, "YYYY-MM-DD");
-                      if (!_moodMap[k]) return null;
-                      return `mood-${(
-                        createAverageMood(
-                          _moodMap[k].map(
-                            (x) => moodMap[x.emotion as keyof typeof moodMap]
-                          ) as MoodType[]
-                        ) as keyof typeof moodMap
-                      ).replace(/_/g, "-")}`;
-                    }}
-                  />
-                  <label>Click on an entry to view logs for that day.</label>
-                </Container>
-              ),
+              mood_history: <MoodHistory hook={tasks} setPage={setPage} />,
               settings: <SettingsPage hook={tasks} />,
             }[page] ?? <TaskList hook={tasks} type={page as ListType} />}
           </>

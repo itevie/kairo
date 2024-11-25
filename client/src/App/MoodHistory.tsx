@@ -1,57 +1,146 @@
-import Column from "../dawn-ui/components/Column";
+import Calendar from "react-calendar";
 import Container from "../dawn-ui/components/Container";
-import GoogleMatieralIcon from "../dawn-ui/components/GoogleMaterialIcon";
-import Row from "../dawn-ui/components/Row";
-import Words from "../dawn-ui/components/Words";
-import { combineStyles } from "../dawn-ui/util";
 import useTasks from "./hooks/useTasks";
-import { moodColorMap, moodMap } from "./MoodLogger";
+import { DawnTime } from "../dawn-ui/time";
+import { useEffect, useMemo, useState } from "react";
 import { MoodLog } from "./types";
+import {
+  createAverageMood,
+  moodColorMap,
+  moodMap,
+  MoodType,
+  moodTypes,
+} from "./MoodLogger";
+import { Chart as ChartJS, registerables, ChartConfiguration } from "chart.js";
+import { Line } from "react-chartjs-2";
+import Row from "../dawn-ui/components/Row";
+import Column from "../dawn-ui/components/Column";
+
+ChartJS.register(...registerables);
 
 export default function MoodHistory({
-  _moodMap,
   hook,
-  date,
+  setPage,
 }: {
-  date: string;
-  _moodMap: Record<string, MoodLog[]>;
   hook: ReturnType<typeof useTasks>;
+  setPage: Function;
 }) {
-  const useColors =
-    (localStorage.getItem("kairo-use-mood-colors") ?? "true") === "true";
-  console.log(_moodMap, date);
+  const [historyData, setHistoryData] = useState<ChartConfiguration | null>(
+    null
+  );
+  const _moodMap = useMemo(() => {
+    const t: Record<string, MoodLog[]> = {};
+    for (const m of hook.moods) {
+      let k = DawnTime.formatDateString(new Date(m.created_at), "YYYY-MM-DD");
+      if (!t[k]) t[k] = [];
+      t[k].push(m);
+    }
+    return t;
+  }, [hook.moods]);
+
+  useEffect(() => {
+    let data = hook.moods.map((x) => {
+      return {
+        created_at: x.created_at,
+        index: moodTypes.indexOf(
+          moodMap[x.emotion as keyof typeof moodMap] as MoodType
+        ),
+      };
+    });
+
+    let dates: { created_at: string; value: number }[] = [];
+    let past: string | null = null;
+    let cur: number = 0;
+    let len: number = 0;
+
+    for (const dat of data) {
+      let d = DawnTime.formatDateString(new Date(dat.created_at), "YYYY-MM-DD");
+      if (d !== past) {
+        dates.push({
+          created_at: past || d,
+          value: Math.round(cur / len),
+        });
+        past = d;
+        cur = 0;
+        len = 0;
+      }
+      cur += dat.index - 2;
+      len += 1;
+    }
+
+    if (len) {
+      dates.push({
+        created_at: past || "0000-00-00",
+        value: Math.round(cur / len),
+      });
+    }
+
+    let cdata: ChartConfiguration = {
+      type: "line",
+      data: {
+        labels: dates.map((x) => x.created_at),
+        datasets: [
+          {
+            label: "Mood Overtime",
+            data: dates.map((x) => x.value),
+            segment: {
+              borderColor: (ctx) => {
+                let idx = (((cdata.data.datasets[0].data[
+                  ctx.p1DataIndex
+                ] as number) ?? 0) + 2) as any;
+
+                return moodColorMap[moodTypes[idx]];
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    setHistoryData(cdata);
+  }, [hook.moods]);
+
   return (
-    <Column>
-      <Words type="page-title">Entries for {date}</Words>
-      {(_moodMap[date] ?? []).reverse().map((x) => (
-        <Container util={["no-min"]}>
-          <Row util={["align-center"]}>
-            <GoogleMatieralIcon
-              util={["round"]}
-              style={combineStyles(
-                {
-                  padding: "5px",
-                },
-                useColors
-                  ? {
-                      color:
-                        moodColorMap[
-                          moodMap[x.emotion as keyof typeof moodMap]
-                        ],
-                    }
-                  : {}
-              )}
-              size="32px"
-              outline={true}
-              name={`sentiment_${x.emotion}`}
-            />
-            <Column>
-              <label>{x.created_at}</label>
-              {x.note ? <small>{x.note}</small> : <></>}
-            </Column>
-          </Row>
-        </Container>
-      ))}
-    </Column>
+    <Container title="Average mood calendar">
+      <Row style={{ maxWidth: "100%" }}>
+        <Column>
+          <Calendar
+            onClickDay={(v) => {
+              setPage(
+                `view_mood_details@${DawnTime.formatDateString(
+                  v,
+                  "YYYY-MM-DD"
+                )}`
+              );
+            }}
+            tileClassName={({ activeStartDate, date, view }) => {
+              if (view !== "month") return null;
+              let k = DawnTime.formatDateString(date, "YYYY-MM-DD");
+              if (!_moodMap[k]) return null;
+              return `mood-${(
+                createAverageMood(
+                  _moodMap[k].map(
+                    (x) => moodMap[x.emotion as keyof typeof moodMap]
+                  ) as MoodType[]
+                ) as keyof typeof moodMap
+              ).replace(/_/g, "-")}`;
+            }}
+          />
+          <label>Click on an entry to view logs for that day.</label>
+        </Column>
+        {historyData && (
+          <Line
+            options={{ responsive: true, maintainAspectRatio: false }}
+            style={{
+              maxHeight: "400px",
+              minWidth: "300px",
+              maxWidth: "700px",
+              width: "100%",
+            }}
+            data={historyData.data as any}
+          />
+        )}
+      </Row>
+    </Container>
   );
 }

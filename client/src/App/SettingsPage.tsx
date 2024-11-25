@@ -113,6 +113,22 @@ export default function SettingsPage({
             </tr>
           </tbody>
         </table>
+        <Words type="heading">Tips</Words>
+        <Row style={{ margin: "10px" }}>
+          <input
+            type="checkbox"
+            defaultChecked={
+              (localStorage.getItem("kairo-enable-tips") ?? "true") === "true"
+            }
+            onChange={(e) => {
+              localStorage.setItem(
+                "kairo-enable-tips",
+                e.currentTarget.checked.toString()
+              );
+            }}
+          />
+          <label>Show a random tip everyday</label>
+        </Row>
         <Words type="heading">Mood Tracker</Words>
         <Row style={{ margin: "10px" }}>
           <input
