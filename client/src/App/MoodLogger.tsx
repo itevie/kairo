@@ -68,7 +68,7 @@ export function createAverageMood(values: MoodType[]): MoodType {
   let average = 0;
   for (const v of values) average += moodTypes.indexOf(v) - 2;
   average /= values.length;
-  return moodTypes[Math.round(Math.min(2, Math.max(-2, average))) + 2];
+  return moodTypes[Math.floor(Math.min(2, Math.max(-2, average))) + 2];
 }
 
 function MoodLoggerElement() {

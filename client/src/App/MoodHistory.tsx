@@ -58,7 +58,7 @@ export default function MoodHistory({
       if (d !== past) {
         dates.push({
           created_at: past || d,
-          value: Math.round(cur / len),
+          value: Math.floor(cur / len),
         });
         past = d;
         cur = 0;
@@ -71,7 +71,7 @@ export default function MoodHistory({
     if (len) {
       dates.push({
         created_at: past || "0000-00-00",
-        value: Math.round(cur / len),
+        value: Math.floor(cur / len),
       });
     }
 
