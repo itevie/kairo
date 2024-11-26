@@ -137,7 +137,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			if value != nil {
 				query := fmt.Sprintf("UPDATE tasks SET %s = ? WHERE id = ? RETURNING *;", field)
 				if err := db.QueryRowx(query, value, task.ID).StructScan(task); err != nil {
-					fmt.Println(err.Error(), query, value)
+					fmt.Println(err.Error(), query, value, value == nil)
 					c.JSON(http.StatusInternalServerError, gin.H{
 						"message": "Failed to update task",
 					})
