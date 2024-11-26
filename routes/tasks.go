@@ -14,65 +14,30 @@ import (
 
 func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	router.GET("/tasks", util.AuthenticateJWT(), func(c *gin.Context) {
-		user, _ := c.Get("user_id")
-		var tasks []models.Task = []models.Task{}
+		user := util.GetUserID(c)
 
-		if err := db.Select(&tasks, "SELECT * FROM tasks WHERE user = ?;", user); err != nil {
-			fmt.Println(err.Error())
+		var tasks []models.Task = []models.Task{}
+		if err := models.GetTasks(user, db, tasks); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to load tasks from database",
+				"message": err.Error(),
 			})
 			c.Abort()
 			return
 		}
 
-		for _, v := range tasks {
-			if v.Finished && v.Repeat != nil {
-				var t time.Time
-				if v.Due != nil {
-					t, _ = time.Parse(util.TimeLayout, *v.Due)
-				} else {
-					t = time.Now()
-				}
-
-				var temp models.Task
-				if err := db.QueryRowx(
-					"INSERT INTO tasks (user, title, finished, created_at, due, repeat, in_group, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;",
-					user,
-					v.Title,
-					false,
-					time.Now().Format(util.TimeLayout),
-					t.Add(time.Duration(*v.Repeat)*time.Millisecond).Format(util.TimeLayout),
-					*v.Repeat,
-					v.Group,
-					v.Note,
-				).StructScan(&temp); err != nil {
-					fmt.Println(err.Error())
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"message": "Failed to create new task for repeating task",
-					})
-					c.Abort()
-					return
-				}
-				tasks = append(tasks, temp)
-
-				if err := db.QueryRowx("UPDATE tasks SET repeat = null WHERE id = ? RETURNING *;", v.ID).StructScan(&v); err != nil {
-					fmt.Println(err.Error())
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"message": "Failed to create new task for repeating task",
-					})
-					c.Abort()
-					return
-				}
-
-			}
+		if err := models.UpdateTaskDueDates(tasks, user, db); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
+			c.Abort()
+			return
 		}
 
 		c.JSON(http.StatusOK, tasks)
 	})
 
 	router.POST("/tasks", util.AuthenticateJWT(), func(c *gin.Context) {
-		user, _ := c.Get("user_id")
+		user := util.GetUserID(c)
 
 		var body struct {
 			Title  string  `json:"title" binding:"required"`
@@ -117,7 +82,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.PATCH("/tasks/:id", util.AuthenticateJWT(), func(c *gin.Context) {
-		user, _ := c.Get("user_id")
+		user := util.GetUserID(c)
 		param, err := strconv.Atoi(c.Param("id"))
 
 		if err != nil {
@@ -129,19 +94,10 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		var task models.Task
-		if err := db.QueryRowx("SELECT * FROM tasks WHERE id = ?;", param).StructScan(&task); err != nil {
-			fmt.Println(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to fetch task",
-			})
-			c.Abort()
-			return
-		}
-
-		if task.User != int(user.(float64)) {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "You do not own this task",
+		task, err, code := models.FetchTask(param, user, db)
+		if err != nil {
+			c.JSON(code, gin.H{
+				"message": err.Error(),
 			})
 			c.Abort()
 			return
@@ -164,79 +120,25 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		if body.Finished != nil {
-			if err := db.QueryRowx("UPDATE tasks SET finished = ? WHERE id = ? RETURNING *;", *body.Finished, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
+		fields := map[string]interface{}{
+			"finished": body.Finished,
+			"due":      body.Due,
+			"group":    body.Group,
+			"repeat":   body.Repeat,
+			"note":     body.Note,
+			"title":    body.Title,
 		}
 
-		if body.Due != nil {
-			if !util.IsValidDate(*body.Due) {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"message": "Invalid date format for due, expected yyyy/mm/dd hh:mm:ss",
-				})
-				c.Abort()
-				return
-			}
-
-			if err := db.QueryRowx("UPDATE tasks SET due = ? WHERE id = ? RETURNING *;", *body.Due, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
-		}
-
-		if body.Note != nil {
-			if err := db.QueryRowx("UPDATE tasks SET note = ? WHERE id = ? RETURNING *;", *body.Note, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
-		}
-
-		if body.Title != nil {
-			if err := db.QueryRowx("UPDATE tasks SET title = ? WHERE id = ? RETURNING *;", *body.Title, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
-		}
-
-		if body.Repeat != nil {
-			if *body.Repeat < 1000 {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"message": "Repeat must be at least 1000",
-				})
-				c.Abort()
-				return
-			}
-
-			if err := db.QueryRowx("UPDATE tasks SET repeat = ? WHERE id = ? RETURNING *;", *body.Repeat, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
-			}
-		}
-
-		if body.Group != nil {
-			if err := db.QueryRowx("UPDATE tasks SET in_group = ? WHERE id = ? RETURNING *;", *body.Group, task.ID).StructScan(&task); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Internal database error",
-				})
-				c.Abort()
-				return
+		for field, value := range fields {
+			if value != nil {
+				query := fmt.Sprintf("UPDATE tasks SET %s = ? WHERE id = ? RETURNING *;", field)
+				if err := db.QueryRowx(query, value, task.ID).StructScan(task); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"message": "Failed to update task",
+					})
+					c.Abort()
+					return
+				}
 			}
 		}
 
@@ -244,7 +146,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.DELETE("/tasks/:id", util.AuthenticateJWT(), func(c *gin.Context) {
-		user, _ := c.Get("user_id")
+		user := util.GetUserID(c)
 		param, err := strconv.Atoi(c.Param("id"))
 
 		if err != nil {
@@ -256,19 +158,10 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		var task models.Task
-		if err := db.QueryRowx("SELECT * FROM tasks WHERE id = ?;", param).StructScan(&task); err != nil {
-			fmt.Println(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to fetch task",
-			})
-			c.Abort()
-			return
-		}
-
-		if task.User != int(user.(float64)) {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "You do not own this task",
+		_, err, code := models.FetchTask(param, user, db)
+		if err != nil {
+			c.JSON(code, gin.H{
+				"message": err.Error(),
 			})
 			c.Abort()
 			return

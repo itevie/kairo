@@ -11,6 +11,9 @@ import { combineClasses } from "../dawn-ui/util";
 import GoogleMatieralIcon from "../dawn-ui/components/GoogleMaterialIcon";
 import { showConfirmModel } from "../dawn-ui/components/AlertManager";
 import Flyout from "../dawn-ui/components/Flyout";
+import { spawnConfetti } from "../dawn-ui/confetti";
+// @ts-ignore
+import task from "./task_completed.mp3";
 
 export type ListType =
   | "due"
@@ -236,6 +239,14 @@ export default function TaskList({
                         });
                       else setSelected((old) => [...old, x.id]);
                     } else {
+                      if (!x.finished) {
+                        //new Audio(task).play();
+                        if (
+                          (localStorage.getItem("kairo-show-confetti") ??
+                            "true") === "true"
+                        )
+                          spawnConfetti(e.pageX, e.pageY);
+                      }
                       hook.updateTask(x.id, { finished: !x.finished });
                     }
                   }}

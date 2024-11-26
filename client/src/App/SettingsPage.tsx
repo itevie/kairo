@@ -9,6 +9,7 @@ import useTasks from "./hooks/useTasks";
 import { defaultMoodList, moodColorMap, moodList, moodMap } from "./MoodLogger";
 import GoogleMatieralIcon from "../dawn-ui/components/GoogleMaterialIcon";
 import { combineStyles } from "../dawn-ui/util";
+import { spawnConfetti } from "../dawn-ui/confetti";
 
 export default function SettingsPage({
   hook,
@@ -110,6 +111,28 @@ export default function SettingsPage({
                   }}
                 />
               </td>
+            </tr>
+            <tr>
+              <td>
+                <label>Confetti</label>
+              </td>
+              <tr>
+                <input
+                  type="checkbox"
+                  defaultValue={
+                    localStorage.getItem("kairo-show-confetii") ?? "true"
+                  }
+                  onClick={(e) => {
+                    spawnConfetti(e.pageX, e.pageY);
+                  }}
+                  onChange={(e) => {
+                    localStorage.setItem(
+                      "kairo-show-confetti",
+                      e.currentTarget.checked.toString()
+                    );
+                  }}
+                />
+              </tr>
             </tr>
           </tbody>
         </table>

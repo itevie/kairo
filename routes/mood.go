@@ -13,8 +13,7 @@ import (
 
 func RegisterMoodRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	router.GET("/moods", util.AuthenticateJWT(), func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		user := int(userID.(float64))
+		user := util.GetUserID(c)
 
 		var moods []models.MoodEntry = []models.MoodEntry{}
 
@@ -31,8 +30,7 @@ func RegisterMoodRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.POST("/moods", util.AuthenticateJWT(), func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		user := int(userID.(float64))
+		user := util.GetUserID(c)
 
 		var body struct {
 			Emotion string  `json:"emotion" binding:"required"`

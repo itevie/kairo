@@ -13,11 +13,9 @@ import (
 
 func RegisterGroupRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	router.GET("/groups", util.AuthenticateJWT(), func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		user := int(userID.(float64))
+		user := util.GetUserID(c)
 
 		var groups []models.Group = []models.Group{}
-
 		if err := db.Select(&groups, "SELECT * FROM groups WHERE user = ?;", user); err != nil {
 			fmt.Println(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -31,8 +29,7 @@ func RegisterGroupRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.POST("/groups", util.AuthenticateJWT(), func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		user := int(userID.(float64))
+		user := util.GetUserID(c)
 
 		var body struct {
 			Name string `json:"name" binding:"required"`
@@ -59,8 +56,7 @@ func RegisterGroupRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.PATCH("/groups/:id", util.AuthenticateJWT(), func(c *gin.Context) {
-		userID, _ := c.Get("user_id")
-		user := int(userID.(float64))
+		user := util.GetUserID(c)
 		param, err := strconv.Atoi(c.Param("id"))
 
 		if err != nil {
