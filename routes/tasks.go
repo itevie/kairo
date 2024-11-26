@@ -16,8 +16,10 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	router.GET("/tasks", util.AuthenticateJWT(), func(c *gin.Context) {
 		user := util.GetUserID(c)
 
+		fmt.Println(user)
+
 		var tasks []models.Task = []models.Task{}
-		if err := models.GetTasks(user, db, tasks); err != nil {
+		if err := models.GetTasks(user, db, &tasks); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})
