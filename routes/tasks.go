@@ -25,6 +25,8 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
+		fmt.Println(len(tasks))
+
 		if err := models.UpdateTaskDueDates(tasks, user, db); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
