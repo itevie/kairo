@@ -34,7 +34,7 @@ func FetchTask(id int, user int, db *sqlx.DB) (*Task, error, int) {
 }
 
 func GetTasks(user int, db *sqlx.DB, scan []Task) error {
-	if err := db.Select(&scan, "SELECT * FROM tasks WHERE user = ?;", user); err != nil {
+	if err := db.Select(scan, "SELECT * FROM tasks WHERE user = ?;", user); err != nil {
 		return errors.New("failed to load tasks from database")
 	}
 
