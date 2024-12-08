@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addAlert,
   closeAlert,
@@ -17,18 +17,11 @@ import {
   registerShortcut,
   setCallback,
 } from "../dawn-ui/components/ShortcutManager";
-import showMoodLogger, {
-  createAverageMood,
-  moodMap,
-  MoodType,
-} from "./MoodLogger";
+import showMoodLogger from "./MoodLogger";
 import SettingsPage from "./SettingsPage";
-import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { MoodLog } from "./types";
 import { DawnTime } from "../dawn-ui/time";
 import "./style.css";
-import Container from "../dawn-ui/components/Container";
 import { showContextMenu } from "../dawn-ui/components/ContextMenuManager";
 import Button from "../dawn-ui/components/Button";
 import Flyout from "../dawn-ui/components/Flyout";
@@ -57,6 +50,10 @@ export default function Kairo() {
     } else if (localStorage.getItem("kairo-default-page")) {
       setPage(localStorage.getItem("kairo-default-page") ?? "all");
     }
+
+    window.addEventListener("hashchange", () => {
+      setPage(window.location.hash.replace("#", ""));
+    });
 
     setCallback("settings", () => {
       setPage("settings");

@@ -58,20 +58,20 @@ export default function MoodHistory({
       if (d !== past) {
         dates.push({
           created_at: past || d,
-          value: Math.floor(cur / len),
+          value: Math.round(cur / len),
         });
         past = d;
         cur = 0;
         len = 0;
       }
-      cur += dat.index - 2;
+      cur += dat.index;
       len += 1;
     }
 
     if (len) {
       dates.push({
         created_at: past || "0000-00-00",
-        value: Math.floor(cur / len),
+        value: Math.round(cur / len),
       });
     }
 
@@ -85,9 +85,9 @@ export default function MoodHistory({
             data: dates.map((x) => x.value),
             segment: {
               borderColor: (ctx) => {
-                let idx = (((cdata.data.datasets[0].data[
+                let idx = ((cdata.data.datasets[0].data[
                   ctx.p1DataIndex
-                ] as number) ?? 0) + 2) as any;
+                ] as number) ?? 0) as any;
 
                 return moodColorMap[moodTypes[idx]];
               },

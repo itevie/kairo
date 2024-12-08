@@ -127,7 +127,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 		fields := map[string]interface{}{
 			"finished": body.Finished,
 			"due":      body.Due,
-			"group":    body.Group,
+			"in_group": body.Group,
 			"repeat":   body.Repeat,
 			"note":     body.Note,
 			"title":    body.Title,
