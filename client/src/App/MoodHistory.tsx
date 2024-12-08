@@ -28,6 +28,8 @@ export default function MoodHistory({
   const [historyData, setHistoryData] = useState<ChartConfiguration | null>(
     null
   );
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [graphTimeFrame, setGraphTimeFrame] = useState<string>("current-month");
   const _moodMap = useMemo(() => {
     const t: Record<string, MoodLog[]> = {};
     for (const m of hook.moods) {
@@ -54,7 +56,17 @@ export default function MoodHistory({
     let len: number = 0;
 
     for (const dat of data) {
-      let d = DawnTime.formatDateString(new Date(dat.created_at), "YYYY-MM-DD");
+      let date = new Date(dat.created_at);
+      if (graphTimeFrame === "current-month") {
+        if (
+          date.getFullYear() !== startDate.getFullYear() ||
+          date.getMonth() !== startDate.getMonth()
+        )
+          continue;
+      } else if (graphTimeFrame === "current-year") {
+        if (date.getFullYear() !== startDate.getFullYear()) continue;
+      }
+      let d = DawnTime.formatDateString(date, "YYYY-MM-DD");
       if (d !== past) {
         dates.push({
           created_at: past || d,
@@ -98,7 +110,7 @@ export default function MoodHistory({
     };
 
     setHistoryData(cdata);
-  }, [hook.moods]);
+  }, [hook.moods, startDate, graphTimeFrame]);
 
   return (
     <Container title="Average mood calendar">
@@ -112,6 +124,9 @@ export default function MoodHistory({
                   "YYYY-MM-DD"
                 )}`
               );
+            }}
+            onActiveStartDateChange={(v) => {
+              setStartDate(v.activeStartDate || new Date());
             }}
             tileClassName={({ activeStartDate, date, view }) => {
               if (view !== "month") return null;
@@ -127,6 +142,19 @@ export default function MoodHistory({
             }}
           />
           <label>Click on an entry to view logs for that day.</label>
+          <Row util={["no-gap"]} style={{ gap: "2px" }}>
+            <label>Graph time frame:</label>
+            <select
+              value={graphTimeFrame}
+              onChange={(e) => {
+                setGraphTimeFrame(e.currentTarget.value);
+              }}
+            >
+              <option value="current-month">Current Month</option>
+              <option value="current-year">Current Year</option>
+              <option value="all-time">All Time</option>
+            </select>
+          </Row>
         </Column>
         {historyData && (
           <Line

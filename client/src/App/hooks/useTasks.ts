@@ -20,6 +20,11 @@ export default function useTasks() {
   const [moods, setMoods] = useState<MoodLog[]>([]);
 
   useEffect(() => {
+    let taskCache = localStorage.getItem("kairo_task_cache");
+    if (taskCache) setTasks(JSON.parse(taskCache));
+    let groupCache = localStorage.getItem("kairo_group_cache");
+    if (groupCache) setGroups(JSON.parse(groupCache));
+
     _fetchMoodEntries();
     reloadGroups();
     reloadTasks();
@@ -30,6 +35,7 @@ export default function useTasks() {
   async function reloadTasks() {
     try {
       const response = await fetchTasks();
+      localStorage.setItem("kairo_task_cache", JSON.stringify(response.data));
       setTasks(response.data);
     } catch {}
   }
@@ -65,15 +71,21 @@ export default function useTasks() {
   async function reloadGroups() {
     try {
       const response = await fetchGroups();
-      console.log(response);
+      localStorage.setItem("kairo_group_cache", JSON.stringify(response.data));
       setGroups(response.data);
     } catch {}
   }
 
   async function createGroup(name: string) {
     try {
-      await addGroup(name);
+      let n = await addGroup(name);
+      setGroups((old) => {
+        return [...old, n.data];
+      });
       reloadGroups();
+      setTimeout(() => {
+        window.location.hash = `#group-${n.data.id}`;
+      }, 300);
     } catch {}
   }
 
