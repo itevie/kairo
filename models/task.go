@@ -46,7 +46,10 @@ func UpdateTaskDueDates(tasks []Task, user int, db *sqlx.DB) error {
 		if v.Finished && v.Repeat != nil {
 			var t time.Time
 			if v.Due != nil {
-				t, _ = time.Parse(util.TimeLayout, *v.Due)
+				var now time.Time = time.Now()
+				cst, _ := time.LoadLocation("Local")
+				temp, _ := time.Parse(util.TimeLayout, *v.Due)
+				t = time.Date(now.Year(), now.Month(), now.Day(), temp.Hour(), temp.Minute(), temp.Second(), temp.Nanosecond(), cst)
 			} else {
 				t = time.Now()
 			}
