@@ -238,16 +238,6 @@ export default function TaskList({
                           return [...old];
                         });
                       else setSelected((old) => [...old, x.id]);
-                    } else {
-                      if (!x.finished) {
-                        //new Audio(task).play();
-                        if (
-                          (localStorage.getItem("kairo-show-confetti") ??
-                            "true") === "true"
-                        )
-                          spawnConfetti(e.pageX, e.pageY);
-                      }
-                      hook.updateTask(x.id, { finished: !x.finished });
                     }
                   }}
                   onContextMenu={(e) => {
@@ -292,7 +282,21 @@ export default function TaskList({
                   style={{ width: "100%" }}
                 >
                   <Row>
-                    <input readOnly checked={x.finished} type="checkbox" />
+                    <input
+                      onClick={(e) => {
+                        if (!x.finished) {
+                          if (
+                            (localStorage.getItem("kairo-show-confetti") ??
+                              "true") === "true"
+                          )
+                            spawnConfetti(e.pageX, e.pageY);
+                        }
+                        hook.updateTask(x.id, { finished: !x.finished });
+                      }}
+                      readOnly
+                      checked={x.finished}
+                      type="checkbox"
+                    />
                     <Column>
                       <label>{x.title}</label>
                       {x.note ? (
