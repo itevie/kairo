@@ -70,10 +70,10 @@ func RegisterAPIRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.GET("/user_data", util.AuthenticateJWT(), func(c *gin.Context) {
-		// userID := util.GetUserID(c)
+		userID := util.GetUserID(c)
 
 		var user models.User
-		if err := db.QueryRowx("SELECT * FROM users WHERE id = ?;", 1).StructScan(&user); err != nil {
+		if err := db.QueryRowx("SELECT * FROM users WHERE id = ?;", userID).StructScan(&user); err != nil {
 			fmt.Println(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to fetch user",
@@ -86,7 +86,7 @@ func RegisterAPIRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 	})
 
 	router.PATCH("/update_settings", util.AuthenticateJWT(), func(c *gin.Context) {
-		// userID := util.GetUserID(c)
+		userID := util.GetUserID(c)
 
 		var body struct {
 			Settings string `json:"settings" binding:"required"`
@@ -101,7 +101,7 @@ func RegisterAPIRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			return
 		}
 
-		if err := db.QueryRowx("UPDATE users SET settings = ? WHERE id = ? RETURNING *;", body.Settings, 1).StructScan(&models.User{}); err != nil {
+		if err := db.QueryRowx("UPDATE users SET settings = ? WHERE id = ? RETURNING *;", body.Settings, userID).StructScan(&models.User{}); err != nil {
 			fmt.Println(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to update user",
