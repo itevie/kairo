@@ -11,6 +11,7 @@ type User struct {
 	ID          int     `db:"id" json:"id"`
 	DawnID      int     `db:"dawn_id" json:"-"`
 	UpdateToken *string `db:"update_token" json:"-"`
+	Settings    *string `db:"settings" json:"settings"`
 }
 
 func UpdateUpdateToken(user int, db *sqlx.DB) {

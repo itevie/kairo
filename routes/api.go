@@ -68,4 +68,50 @@ func RegisterAPIRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			"moods":  moods,
 		})
 	})
+
+	router.GET("/user_data", util.AuthenticateJWT(), func(c *gin.Context) {
+		// userID := util.GetUserID(c)
+
+		var user models.User
+		if err := db.QueryRowx("SELECT * FROM users WHERE id = ?;", 1).StructScan(&user); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to fetch user",
+			})
+			c.Abort()
+			return
+		}
+
+		c.JSON(http.StatusOK, user)
+	})
+
+	router.PATCH("/update_settings", util.AuthenticateJWT(), func(c *gin.Context) {
+		// userID := util.GetUserID(c)
+
+		var body struct {
+			Settings string `json:"settings" binding:"required"`
+		}
+
+		if err := c.ShouldBindJSON(&body); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid body",
+			})
+			c.Abort()
+			return
+		}
+
+		if err := db.QueryRowx("UPDATE users SET settings = ? WHERE id = ? RETURNING *;", body.Settings, 1).StructScan(&models.User{}); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to update user",
+			})
+			c.Abort()
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Updated settings",
+		})
+	})
 }

@@ -54,6 +54,7 @@ func main() {
 
 	api := router.Group("/api")
 	{
+		routes.RegisterAPIRoutes(api, db)
 		routes.RegisterTaskRoutes(api, db)
 		routes.RegisterGroupRoutes(api, db)
 		routes.RegisterMoodRoutes(api, db)
