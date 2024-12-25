@@ -45,6 +45,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			Note   *string `json:"note"`
 			Repeat *int    `json:"repeat"`
 			Group  *int    `json:"in_group"`
+			Tags   *string `json:"tags"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -65,8 +66,8 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 
 		var task models.Task
 		err := db.QueryRowx(
-			"INSERT INTO tasks (user, title, created_at, due, repeat, in_group, note) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *",
-			user, body.Title, time.Now().Format(util.TimeLayout), body.Due, body.Repeat, body.Group, body.Note,
+			"INSERT INTO tasks (user, title, created_at, due, repeat, in_group, note, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+			user, body.Title, time.Now().Format(util.TimeLayout), body.Due, body.Repeat, body.Group, body.Note, body.Tags,
 		).StructScan(&task)
 
 		if err != nil {
@@ -110,6 +111,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			Repeat   *int    `json:"repeat"`
 			Note     *string `json:"note"`
 			Title    *string `json:"title"`
+			Tags     *string `json:"tags"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -127,6 +129,7 @@ func RegisterTaskRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			"repeat":   body.Repeat,
 			"note":     body.Note,
 			"title":    body.Title,
+			"tags":     body.Tags,
 		}
 
 		for field, value := range fields {

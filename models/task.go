@@ -14,6 +14,7 @@ type Task struct {
 	Title     string  `db:"title" json:"title"`
 	Finished  bool    `db:"finished" json:"finished"`
 	CreatedAt string  `db:"created_at" json:"created_at"`
+	Tags      *string `db:"tags" json:"tags"`
 	Due       *string `db:"due" json:"due"`
 	Repeat    *int    `db:"repeat" json:"repeat"`
 	Group     *int    `db:"in_group" json:"in_group"`
@@ -56,7 +57,7 @@ func UpdateTaskDueDates(tasks []Task, user int, db *sqlx.DB) error {
 
 			var temp Task
 			if err := db.QueryRowx(
-				"INSERT INTO tasks (user, title, finished, created_at, due, repeat, in_group, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;",
+				"INSERT INTO tasks (user, title, finished, created_at, due, repeat, in_group, note, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;",
 				user,
 				v.Title,
 				false,
@@ -65,6 +66,7 @@ func UpdateTaskDueDates(tasks []Task, user int, db *sqlx.DB) error {
 				*v.Repeat,
 				v.Group,
 				v.Note,
+				v.Tags,
 			).StructScan(&temp); err != nil {
 				return errors.New("failed to create new task for repeating task")
 			}
