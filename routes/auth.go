@@ -117,8 +117,6 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 			}
 		}
 
-		fmt.Println(user.ID)
-
 		token, err := util.GenerateJWT(user.ID)
 
 		if err != nil {
@@ -147,5 +145,35 @@ func RegisterAuthRoutes(router *gin.RouterGroup, db *sqlx.DB) {
 		} else {
 			c.Redirect(303, "/")
 		}
+	})
+
+	router.GET("/token", util.AuthenticateJWT(), func(c *gin.Context) {
+		user := util.GetUserID(c)
+
+		token, err := util.GenerateJWT(user)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Failed to create JWT token",
+			})
+			c.Abort()
+			return
+		}
+
+		expire := int(time.Now().Add(time.Hour * 24 * 7).Unix())
+
+		var session models.Session
+		if err := db.QueryRowx("INSERT INTO sessions (sid, expire, user) VALUES (?, ?, ?) RETURNING *;", token, expire, user).StructScan(&session); err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Internal database error",
+			})
+			c.Abort()
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			token: session.SID,
+		})
 	})
 }

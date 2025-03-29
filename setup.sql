@@ -6,11 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- CREATE TABLE IF NOT EXISTS user_tags (
-  -- name TEXT NOT NULL,
-  -- user_id INTEGER REFERENCES users(id) NOT NULL,
-  -- UNIQUE(name, user_id)
+-- name TEXT NOT NULL,
+-- user_id INTEGER REFERENCES users(id) NOT NULL,
+-- UNIQUE(name, user_id)
 -- );
-
 CREATE TABLE IF NOT EXISTS groups (
   id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
   user INTEGER REFERENCES users(id) NOT NULL,
